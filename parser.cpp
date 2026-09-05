@@ -1,29 +1,34 @@
+#include <iostream>
+#include <vector>
+#include <string>
+
+using namespace std;
 
 class Parser
 {
-private:
     vector<Token> tokens;
     int pos;
     string error;
 
 public:
-    Parser(vector<Token> tokens)
+    Parser(vector<Token> t)
     {
-        this->tokens = tokens;
+        tokens = t;
         pos = 0;
         error = "";
     }
+
     Token current()
     {
-        if (pos < (int)tokens.size())
+        if (pos < tokens.size())
             return tokens[pos];
 
         return Token("EOF", "", -1);
     }
+
     void advance()
     {
-        if (pos < (int)tokens.size())
-            pos++;
+        pos++;
     }
 
     bool check(string type)
@@ -31,30 +36,9 @@ public:
         return current().type_ == type;
     }
 
-    bool match(string type)
-    {
-        if (check(type))
-        {
-            advance();
-            return true;
-        }
-
-        return false;
-    }
-
-    void parserError(string message)
-    {
-        if (error.empty())
-        {
-            error = "ParserError: " +
-                    message +
-                    " at line " +
-                    to_string(current().line);
-        }
-    }
     bool parse()
     {
-        while (current().type_ != "EOF")
+        while (!check("EOF"))
         {
             if (!statement())
                 return false;
@@ -62,152 +46,125 @@ public:
 
         return true;
     }
+
     bool statement()
     {
         if (check(INTEGER))
             return declaration();
 
-        else if (check(IDENTIFIER))
+        if (check(IDENTIFIER))
             return assignment();
 
-        else if (check(PRINT))
+        if (check(PRINT))
             return printStatement();
 
-        else
-        {
-            parserError(
-                "Unexpected token " +
-                current().type_);
-
-            return false;
-        }
+        error = "Parser Error";
+        return false;
     }
+
     bool declaration()
     {
-
         advance();
 
         if (!check(IDENTIFIER))
         {
-            parserError(
-                "Expected identifier after 'integer'");
-
+            error = "Expected identifier";
             return false;
         }
 
         advance();
-
         return true;
     }
+
     bool assignment()
     {
-
         advance();
 
-        if (!match(ASSIGNMENT))
+        if (!check(ASSIGNMENT))
         {
-            parserError(
-                "Expected ':' after identifier");
-
+            error = "Expected :";
             return false;
         }
 
-        int dummy;
+        advance();
 
-        if (!expression(dummy))
-            return false;
+        expression();
 
         return true;
     }
+
     bool printStatement()
     {
-        // ptr
         advance();
 
-        // identifier
         if (!check(IDENTIFIER))
         {
-            parserError(
-                "Expected identifier after 'ptr'");
-
+            error = "Expected identifier";
             return false;
         }
 
         advance();
-
         return true;
     }
-    bool expression(int &result)
+
+    int expression()
     {
-        if (!term(result))
-            return false;
+        int result = term();
 
         while (check(PLUS) || check(MINUS))
         {
             string op = current().type_;
-
             advance();
 
-            int right;
-
-            if (!term(right))
-                return false;
+            int right = term();
 
             if (op == PLUS)
-                result += right;
-
-            else if (op == MINUS)
-                result -= right;
+                result = result + right;
+            else
+                result = result - right;
         }
 
-        return true;
+        return result;
     }
-    bool term(int &result)
+
+    int term()
     {
-        if (!factor(result))
-            return false;
+        int result = factor();
 
         while (check(MULTIPLICATION))
         {
             advance();
 
-            int right;
+            int right = factor();
 
-            if (!factor(right))
-                return false;
-
-            result *= right;
+            result = result * right;
         }
 
-        return true;
+        return result;
     }
-    bool factor(int &result)
+
+    int factor()
     {
         if (check(INTEGER_LITERAL))
         {
-            result = stoi(current().value);
+            int value = stoi(current().value);
             advance();
 
-            return true;
+            return value;
         }
 
-        else if (check(IDENTIFIER))
+        if (check(IDENTIFIER))
         {
             advance();
 
-            result = 0;
-
-            return true;
+            return 0;
         }
 
-        else
-        {
-            parserError(
-                "Expected integer or identifier");
+        error = "Expected number or identifier";
 
-            return false;
-        }
+        return 0;
     }
+
     string getError()
     {
         return error;
