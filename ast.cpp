@@ -5,9 +5,7 @@
 
 using namespace std;
 
-// -------------------------
 // Token
-// -------------------------
 
 struct Token
 {
@@ -16,9 +14,7 @@ struct Token
     int line;
 };
 
-// -------------------------
 // Expression
-// -------------------------
 
 struct Expr
 {
