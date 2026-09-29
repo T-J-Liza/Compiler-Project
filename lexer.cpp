@@ -121,7 +121,7 @@ private:
         {
             addToken("ELSE");
         }
-        else if (word == "ghurtethako")
+        else if (word == "ghurtethakojodi")
         {
             addToken("WHILE");
         }
